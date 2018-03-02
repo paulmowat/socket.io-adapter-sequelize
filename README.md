@@ -11,6 +11,15 @@ npm install socket.io-adapter-sequelize
 var io = require('socket.io')(3000);
 var SequelizeAdapter = require('socket.io-adapter-sequelize');
 
+var dbconfig = {
+      'database': 'test-db',
+      'username': 'user',
+      'password': 'pass',            
+      'dialect': 'sqlite',
+      'storage': 'test/test-db.sqlite',
+      'logging': false
+    }
+
 var sequelize = new Sequelize(dbconfig)
 io.adapter(SequelizeAdapter(sequelize));
 ```
@@ -30,7 +39,7 @@ The following options are allowed:
 
 ## When to use
 
-Use when you want to use a sequelize compatable database to store 
+Use when you want to use a sequelize compatable database to pass events between nodes when working with clusters.  
 
 ## Credit
 
