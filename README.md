@@ -1,7 +1,7 @@
 # socket.io-adapter-sequelize
 
 [![npm](https://img.shields.io/npm/v/socket.io-adapter-sequelize.svg)](https://www.npmjs.com/package/socket.io-adapter-sequelize)
-[![license](https://img.shields.io/npm/l/socket.io-adapter-sequelize.svg?maxAge=2592000)](https://github.com/paulmowat/socket.io-adapter-sequelize/LICENSE)
+[![license](https://img.shields.io/npm/l/socket.io-adapter-sequelize.svg?maxAge=2592000)](https://github.com/paulmowat/socket.io-adapter-sequelize/blob/master/LICENSE)
 [![dependancies](https://img.shields.io/david/paulmowat/socket.io-adapter-sequelize.svg)](https://david-dm.org/paulmowat/socket.io-adapter-sequelize)
 [![dependanciesdev](https://img.shields.io/david/dev/paulmowat/socket.io-adapter-sequelize.svg)](https://david-dm.org/paulmowat/socket.io-adapter-sequelize?type=dev)
 
