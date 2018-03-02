@@ -1,56 +1,26 @@
 
-var uid2 = require('uid2')
-var SocketIOAdapter = require('socket.io-adapter')
-var debug = require('debug')('socket.io-sequelize')
-var Sequelize = require('sequelize')
+const uid2 = require('uid2')
+const SocketIOAdapter = require('socket.io-adapter')
+const debug = require('debug')('socket.io-sequelize')
 
-var SequelizeOP = Sequelize.Op
-
-function getSocketIoStore (tableName, sequelize) {
-  return sequelize.define(tableName, {
-    id: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-      primaryKey: true,
-      autoIncrement: true
-    },
-    serveruid: {
-      type: Sequelize.TEXT
-    },
-    message: {
-      type: Sequelize.TEXT,
-      set: function (value) {
-        this.setDataValue('message', JSON.stringify(value))
-      },
-      get: function () {
-        return JSON.parse(this.getDataValue('message'))
-      }
-    },
-    opts: {
-      type: Sequelize.TEXT,
-      set: function (value) {
-        this.setDataValue('opts', JSON.stringify(value))
-      },
-      get: function () {
-        return JSON.parse(this.getDataValue('opts'))
-      }
-    }
-  }, {
-    tableName: tableName
-  })
-}
-
-module.exports = function (config, opts) {
+module.exports = function (sequelize, opts) {
   opts = opts || {}
 
-  var tableName = opts.tableName || 'socketiostore'
-  var processEvery = opts.processEvery || 1000
+  // Deal with options
+  const tableName = opts.tableName || 'socketiostore'
+  const processEvery = opts.processEvery || 1000
 
-  // this server's key
-  var serveruid = uid2(6)
+  // Create a unqiue server's key
+  const serveruid = uid2(6)
+
+  // Fetch the sequelize class from the sequelize connection
+  const Sequelize = sequelize.Sequelize
+
+  // Set NE Alias to allow backwards compatability
+  const neAlias = (Sequelize.Op !== undefined) ? Sequelize.Op.ne : '$ne'
 
   // set error handler
-  var errorHandler = function (err) {
+  const errorHandler = function (err) {
     debug(err)
     throw err
   }
@@ -59,35 +29,62 @@ module.exports = function (config, opts) {
     constructor (nsp) {
       super(nsp)
       this.super = Object.getPrototypeOf(Object.getPrototypeOf(this))
-      
+
       setInterval(this.processMessages.bind(this), processEvery)
       process.nextTick(this.processMessages.bind(this))
     }
 
     async connectIoStore () {
-      // Connect to the db as needed
-      if (typeof config.Sequelize === 'function') {
-        this.sequelize = config
-      } else if (config && config.connectionString) {
-        this.sequelize = new Sequelize(config.connectionString, config.dialectOptions || {})
-      }
+      // Build/Fetch the socketIoStore model
+      this.socketiostore = this.getSocketIoStore(tableName, sequelize)
 
-      // Get socketIoStore model
-      this.socketiostore = getSocketIoStore(tableName, this.sequelize)
-
-      // Create DB if required
+      // Create DB table if required
       await this.socketiostore.sync()
     }
 
+    getSocketIoStore (tableName, sequelize) {
+      return sequelize.define(tableName, {
+        id: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+          primaryKey: true,
+          autoIncrement: true
+        },
+        serveruid: {
+          type: Sequelize.TEXT
+        },
+        message: {
+          type: Sequelize.TEXT,
+          set: function (value) {
+            this.setDataValue('message', JSON.stringify(value))
+          },
+          get: function () {
+            return JSON.parse(this.getDataValue('message'))
+          }
+        },
+        opts: {
+          type: Sequelize.TEXT,
+          set: function (value) {
+            this.setDataValue('opts', JSON.stringify(value))
+          },
+          get: function () {
+            return JSON.parse(this.getDataValue('opts'))
+          }
+        }
+      }, {
+        tableName: tableName
+      })
+    }
+
     async processMessages () {
-      
+      // Connect to IO Store
       await this.connectIoStore()
 
-      // Find all the records that are not from this server
+      // Find all the records that are not from this server.
       return this.socketiostore.findAll({
         where: {
           'serveruid': {
-            [SequelizeOP.ne]: serveruid
+            [neAlias]: serveruid
           }
         },
         order: ['createdAt']
@@ -102,7 +99,7 @@ module.exports = function (config, opts) {
           return records
         })
         .map((record) => {
-          // Once broadcast then remove the message
+          // Once message has been broadcasted then it can be removed
           return this.socketiostore.destroy({
             where: {
               id: record.id
@@ -120,16 +117,17 @@ module.exports = function (config, opts) {
         debug('ignore different namespace')
         return
       }
+      // Broadcast the message to remote servers
       debug('Server: ' + serveruid + ' - onMessage broadcast: ' + JSON.stringify(msg))
       this.super.broadcast.apply(this, [msg, opts, true])
     }
 
     async broadcast (packet, opts, remote) {
-
       await this.connectIoStore()
 
       this.super.broadcast.call(this, packet, opts)
 
+      // If this is not a remote server then we need to create the message, so it can then be broadcasted them
       if (!remote) {
         if (opts.rooms === undefined) {
           opts.rooms = null

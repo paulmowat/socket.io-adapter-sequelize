@@ -1,5 +1,10 @@
 # socket.io-adapter-sequelize
 
+[![npm](https://img.shields.io/npm/v/socket.io-adapter-sequelize.svg)](https://www.npmjs.com/package/socket.io-adapter-sequelize)
+[![license](https://img.shields.io/npm/l/socket.io-adapter-sequelize.svg?maxAge=2592000)](https://github.com/paulmowat/socket.io-adapter-sequelize/LICENSE)
+[![dependancies](https://img.shields.io/david/paulmowat/socket.io-adapter-sequelize.svg)](https://david-dm.org/paulmowat/socket.io-adapter-sequelize)
+[![dependanciesdev](https://img.shields.io/david/dev/paulmowat/socket.io-adapter-sequelize.svg)](https://david-dm.org/paulmowat/socket.io-adapter-sequelize?type=dev)
+
 ## Install
 ```
 npm install socket.io-adapter-sequelize
@@ -28,7 +33,7 @@ io.adapter(SequelizeAdapter(sequelize));
 
 ### adapter(sequelize[, opts])
 
-`sequelize` is a existing connection to a seqeulize database or an object that contains a `connectionString` and `dialectOptions` property according to the sequelize documentation.
+`sequelize` is an existing connected Sequelize object.
 
 ### adapter(opts)
 
